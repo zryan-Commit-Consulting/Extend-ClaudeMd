@@ -28,6 +28,10 @@ Component IDs are always **camelCase** and **end with the component type**.
   ```
 - **Text / number fields:** `"type": "text"` and `"type": "number"` are valid field widgets (with `id` + `value`). On VIEW pages they render read-only; on EDIT pages they're editable.
 - **Button navigation:** a `button` navigates via a `taskReference` (app task) or `workdayTaskReference` (standard Workday task) attribute — mutually exclusive, one is REQUIRED. NOT a bare `taskId`. Shape: `{ "type": "button", "id": "backButton", "label": "Back", "taskReference": { "taskId": "Home" } }`.
+- **Image / worker photo:** the widget `type` is `"image"`. Set `"userPhoto": true` to render a worker photo (no `value`/`url` needed) — useful as the avatar in a worker profile header. Sits as an ordinary sibling of `text` widgets inside a `fieldSet`.
+  ```json
+  { "type": "image", "id": "workerImage", "userPhoto": true }
+  ```
 
 ## grid widget
 Grid columns are NOT typed widgets placed directly in `columns`. Putting `"type": "text"`/`"number"` as the column type errors with "invalid tag" — those types are only valid INSIDE a `cellTemplate`.
@@ -317,3 +321,100 @@ Outbound endpoints are REST APIs that add/update/delete data. When the user clic
 - `standardEditButtonsHidden` (on `presentation`) — booleanScript to hide OK/Cancel conditionally.
 - `editButtonBar` — override OK and add more **submit** buttons (e.g. `dropdownEditButton` with an `instanceList`); cannot customize Cancel. Define navigation via AMD flow definitions. Persist a dropdown selection as a flow variable using the dropDown's id.
 - `cancelOverride` (on `presentation`) — override Cancel navigation; supports `parameters`/`parameterBindings`. E.g. `"cancelOverride": { "taskId": "home" }`.
+
+## cardContainer & Page Configuration Cards
+
+A **Page Configuration Card** is defined in its own **`.card` file** — NOT inline in the PMD. Its `id` **must match the card file name**. In App Builder they live under **Page Configurations > Cards** in the Components panel.
+
+A Page Configuration Card's `body.type` is one of: **`chartCard`**, **`imageCard`**, **`listCard`**, **`pillCard`**, **`simpleCard`**.
+
+Do NOT confuse these with **Extend Cards** (a different thing — admins add those to Workday entry points like the Home page, delivered Hubs, Search, and Journey; they live in the `Cards` section of the Components panel).
+
+### cardContainer (the PMD side)
+
+`cardContainer` is the container for a group of cards on a page. Multiple cards create a dashboard-like experience.
+
+- **`card` tags are ONLY legal inside a `cardContainer`.** You cannot place a `card` directly in a page body.
+- Every `card` must reference a Page Configuration Card via `cardId`, and may pass `parameters` for dynamic content (this is what lets one card template be reused across pages with different contexts).
+- Valid on **view AND edit** pages. Mobile: Android + iOS.
+- Static cards **always render above** dynamic cards when both are present.
+
+**Attributes:**
+- `layout` (string) — `grid` (**default**, rows of equal height) or `masonry` (columns; content determines card height).
+- `cards` (card array) — static collection; array order = display order. Each entry: `{ "type": "card", "cardId" (req), "parameters" (mapScript), "render" (binding-Boolean) }`.
+- `dynamicCards` (object) — renders a card per item in a list:
+  - `on` (listScript, **req**) — script/endpoint returning the data list.
+  - `as` (string, **req**) — item variable name (alphanumeric + underscore only).
+  - `template` (object, **req**) — `{ "cardId" (stringScript, req — may be static OR dynamic), "parameters" (mapScript) }`.
+- `id` (binding-String) — must start with a letter, unique per page. To be referenceable by other widgets, define it BEFORE them (otherwise "Undefined variable" on validation). Recommended for debugging.
+- `render` (binding-Boolean, default true) — unlike `visible`, when false other tags **cannot reference** this tag on edit pages.
+
+`parameters` is a **mapScript** and supports only: `boolean`, `date`, `list`, `map`, `number`, `set`, `string`.
+
+```json
+{
+  "type": "cardContainer",
+  "id": "statusCardContainer",
+  "layout": "grid",
+  "cards": [
+    {
+      "type": "card",
+      "cardId": "simpleStatusCard",
+      "parameters": "<% { 'title': 'Good news!', 'icon': 'wd-accent-fun', 'indicatorLabel': 'Success', 'indicatorColor': 'green', 'body': 'Your request was submitted.' } %>"
+    }
+  ],
+  "dynamicCards": {
+    "on": "<% helpCases.data %>",
+    "as": "item",
+    "template": {
+      "cardId": "caseCard",
+      "parameters": "<% { 'title': item.title, 'subtitle': item.caseID, 'body': item.detailedMessage, 'id': item.id } %>"
+    }
+  }
+}
+```
+
+### simpleCard (the .card file side)
+
+File `simpleStatusCard.card` → `"id": "simpleStatusCard"`. Set `body.type` to `"simpleCard"`.
+
+**Attributes:**
+- `id` (string, **req**) — must match the card file name.
+- `parameters` (string array) — parameter names the PMD may pass in. Reference them bare in scripts (`<% title %>`), not via a prefix. Use `?: null` for optional ones (e.g. `"icon": "<% icon ?: null %>"`).
+- `header` (object) — `title` (stringScript, bold, top of card), `subtitle` (stringScript, below title), `icon` (string — must be a **`wd-accent-*`** icon), `indicator` (object: `label` stringScript + `color`).
+  - `indicator.color` valid values: **`blue`, `gray`, `green`, `orange`, `red`, `transparent`**.
+- `body` (object, **req**) — `type` (**req**, `"simpleCard"`) and `value` (stringScript, **req**) = the body content.
+- `footer` (TaskButton array) — up to **5** links. Each: `label` (stringScript, **req**) plus **exactly one** of:
+  - `taskReference` — `{ "taskId", "parameterBindings": { ... } }` to navigate to an app task.
+  - `workdayTaskReference` — `{ "wid": "..." }` for a Workday-delivered task/report (use its Integration ID).
+  - `url` (dynamicBinding-String) — external link.
+  - These three are **mutually exclusive**.
+
+```json
+{
+  "id": "caseCard",
+  "parameters": ["title", "subtitle", "icon", "indicator", "body", "id"],
+  "header": {
+    "title": "<% title %>",
+    "subtitle": "<% subtitle %>",
+    "icon": "<% icon ?: null %>",
+    "indicator": {
+      "label": "<% indicator.label ?: null %>",
+      "color": "<% indicator.color ?: null %>"
+    }
+  },
+  "body": {
+    "type": "simpleCard",
+    "value": "<% string:toString(body) %>"
+  },
+  "footer": [
+    {
+      "label": "Case Details",
+      "taskReference": {
+        "taskId": "caseDetails",
+        "parameterBindings": { "caseWid": "<% id %>" }
+      }
+    }
+  ]
+}
+```
