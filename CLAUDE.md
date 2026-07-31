@@ -418,3 +418,7 @@ File `simpleStatusCard.card` → `"id": "simpleStatusCard"`. Set `body.type` to 
   ]
 }
 ```
+
+## Hook verification section
+
+Temporary heading added to prove the sync hook works end to end.
