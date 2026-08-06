@@ -418,3 +418,49 @@ File `simpleStatusCard.card` → `"id": "simpleStatusCard"`. Set `body.type` to 
   ]
 }
 ```
+
+### pillCard (the .card file side)
+
+Displays a **group of buttons (pills)** on a card — e.g. a "Suggested Tasks" launcher. Set `body.type` to `"pillCard"`. Mobile: Android + iOS.
+
+**Attributes:**
+- `id` (string, **req**) — must match the card file name.
+- `parameters` (string array) — parameter names the PMD may pass in (same semantics as `simpleCard`).
+- `header` (object) — `title` (stringScript, bold, top of card), `subtitle` (stringScript), `icon` (string — **`wd-accent-*`** only), `indicator` (object: `label` stringScript + `color`).
+  - `indicator.color` valid values: **`blue`, `gray`, `green`, `orange`, `red`, `transparent`**.
+- `body` (object, **req**):
+  - `type` (**req**) — `"pillCard"`.
+  - `pills` (TaskButton array, **req**) — the buttons to display, **max 10**. Each pill: `label` (stringScript, **req**) + `taskReference` (**req**) — the page to navigate to. Note: unlike `footer`, a pill's ONLY navigation option is `taskReference` (no `url` / `workdayTaskReference`).
+- `footer` (TaskButton array) — up to **5** links. Each: `label` (stringScript, **req**) plus **exactly one** of `taskReference` (`{ "taskId", "parameterBindings" }`), `workdayTaskReference` (`{ "wid": "..." }`), or `url` (dynamicBinding-String) — mutually exclusive.
+
+```json
+{
+  "id": "pillCardExample",
+  "header": { "title": "Suggested Tasks" },
+  "body": {
+    "type": "pillCard",
+    "pills": [
+      { "label": "Create charity", "taskReference": { "taskId": "createCharity" } },
+      { "label": "Donate",         "taskReference": { "taskId": "donate" } },
+      { "label": "View donations", "taskReference": { "taskId": "donations" } }
+    ]
+  },
+  "footer": [
+    { "label": "Home", "taskReference": { "taskId": "home" } }
+  ]
+}
+```
+
+Referenced from a PMD like any other card (`cardId` must match the card file name / `id`):
+
+```json
+{
+  "type": "cardContainer",
+  "layout": "grid",
+  "cards": [
+    { "type": "card", "cardId": "pillCardExample" }
+  ]
+}
+```
+
+Each `taskId` referenced by a pill must exist in the AMD `tasks` array.
