@@ -539,12 +539,16 @@ Since there is no `sum`/`average`, average a numeric attribute like this — not
 
 ```
 <% myList.size() == 0
-     ? 0
-     : number:convertNumberToInt(
-         myList.map(item => { item.progress }).reduce((runningTotal, value) => { runningTotal + value })
-         / myList.size()
-       )
+     ? '0%'
+     : (myList.map(item => { item.progress ?? 0 })
+              .reduce((runningTotal, value) => { runningTotal + value })
+        / myList.size()
+       ).toString().substringBefore('.') + '%'
 %>
 ```
+
+`substringBefore('.')` truncates the decimal — it returns the whole string unchanged when there's no `.`, so it is safe whether the division yields `53.33` or a clean `100`. Do NOT reach for `number:convertNumberToInt` here; it throws `Unknown Function call`.
+
+When comparing an average against exact boundaries (0 or 100), skip rounding entirely and compare the raw quotient — those cases are exact.
 
 Keep percentages stored as **bare numbers** (`"progress": 85`) and append the `%` only at render time (`value.toString() + '%'`). Storing `"85%"` makes the value a display string and forces a `substringBefore('%')` + `toInt()` round-trip before any arithmetic.
