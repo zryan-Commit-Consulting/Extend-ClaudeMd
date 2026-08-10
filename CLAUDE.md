@@ -479,8 +479,11 @@ Signatures below use the doc's own convention: an entry with no leading target a
 - **There is NO built-in `sum`, `average`, `count`, or `round`.** Aggregations must be hand-rolled — use `map` + `reduce` for a sum, then divide by `size()`. Guard against an empty list (`size() == 0`) since dividing by zero and reducing an empty list both fail.
 - `number:` has `max`, `min`, `pow`, `sqrt`, `toBigDecimal`, and the two int converters — nothing else arithmetic.
 - Closures use the `item => { expression }` form (e.g. `errors.map(item => { item.error })`).
-- **This list is not a perfect match for every tenant/release.** `number:convertNumberToInt(...)` is on the list but throws `Unknown Function call` at runtime (observed 2026-08-10). Treat the `number:` namespace as suspect and prefer confirmed-in-use alternatives. To truncate a decimal to a whole number without any `number:` call, use `value.toString().substringBefore('.')`.
-- **Confirmed working in a real app:** `list:filter(list, key, value)`, `.map(closure)`, `.reduce(closure)`, `.size()`, `.toString()`, `.substringBefore(separator)`.
+- **This list is not a perfect match for every tenant/release.** `number:convertNumberToInt(...)` is on the list but throws `Unknown Function call` at runtime (observed 2026-08-10). Treat the `number:` namespace as suspect and prefer confirmed-in-use alternatives.
+- **NUMBERS HAVE NO `.toString()`.** `toString ( )` exists for `date`, `list`, `map`, `set`, and `string` — the `number` namespace has only `convertNumberToInt`, `convertStringToInt`, `max`, `min`, `pow`, `sqrt`, `toBigDecimal`. Calling `.toString()` on a number throws, and inside a listCard row template that silently renders **zero rows** rather than an obvious error.
+- **To stringify a number, concatenate onto an empty string: `'' + myNumber`.** Order matters — `String + Number` concatenates, but `Number + String` throws. So `'' + value + '%'` works while `value + '%'` does not.
+- Once stringified this way you can chain string functions, which is how to truncate a decimal without any `number:` call: `('' + (a / b)).substringBefore('.')`.
+- **Confirmed working in a real app:** `list:filter(list, key, value)`, `.map(closure)`, `.reduce(closure)`, `.size()`, `.substringBefore(separator)`, `date.toString()`, and `'' + number` for stringifying.
 
 ### bool
 `all (expression1, expressionN)` · `any (expression1, expressionN)`
