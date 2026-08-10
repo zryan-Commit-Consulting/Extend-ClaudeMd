@@ -479,6 +479,8 @@ Signatures below use the doc's own convention: an entry with no leading target a
 - **There is NO built-in `sum`, `average`, `count`, or `round`.** Aggregations must be hand-rolled — use `map` + `reduce` for a sum, then divide by `size()`. Guard against an empty list (`size() == 0`) since dividing by zero and reducing an empty list both fail.
 - `number:` has `max`, `min`, `pow`, `sqrt`, `toBigDecimal`, and the two int converters — nothing else arithmetic.
 - Closures use the `item => { expression }` form (e.g. `errors.map(item => { item.error })`).
+- **This list is not a perfect match for every tenant/release.** `number:convertNumberToInt(...)` is on the list but throws `Unknown Function call` at runtime (observed 2026-08-10). Treat the `number:` namespace as suspect and prefer confirmed-in-use alternatives. To truncate a decimal to a whole number without any `number:` call, use `value.toString().substringBefore('.')`.
+- **Confirmed working in a real app:** `list:filter(list, key, value)`, `.map(closure)`, `.reduce(closure)`, `.size()`, `.toString()`, `.substringBefore(separator)`.
 
 ### bool
 `all (expression1, expressionN)` · `any (expression1, expressionN)`
