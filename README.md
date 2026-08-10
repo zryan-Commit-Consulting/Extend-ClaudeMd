@@ -4,7 +4,7 @@ My user-level Claude Code instructions, mirrored from `~\.claude\CLAUDE.md`.
 
 This README is generated from the headings in [CLAUDE.md](./CLAUDE.md) — do not edit it by hand; edit the source instructions and the next sync will rewrite it.
 
-**11 topics** · last updated 2026-08-10 11:43
+**12 topics** · last updated 2026-08-10 13:51
 
 ## Contents
 
@@ -23,6 +23,26 @@ This README is generated from the headings in [CLAUDE.md](./CLAUDE.md) — do no
   - [cardContainer (the PMD side)](./CLAUDE.md#cardcontainer-the-pmd-side)
   - [simpleCard (the .card file side)](./CLAUDE.md#simplecard-the-card-file-side)
   - [pillCard (the .card file side)](./CLAUDE.md#pillcard-the-card-file-side)
+- [Workday Script built-in functions](./CLAUDE.md#workday-script-built-in-functions)
+  - [IMPORTANT gaps to plan around](./CLAUDE.md#important-gaps-to-plan-around)
+  - [bool](./CLAUDE.md#bool)
+  - [bpfTaskHelper](./CLAUDE.md#bpftaskhelper)
+  - [converter](./CLAUDE.md#converter)
+  - [date](./CLAUDE.md#date)
+  - [file](./CLAUDE.md#file)
+  - [fileType](./CLAUDE.md#filetype)
+  - [graph](./CLAUDE.md#graph)
+  - [grid](./CLAUDE.md#grid)
+  - [json](./CLAUDE.md#json)
+  - [list](./CLAUDE.md#list)
+  - [map](./CLAUDE.md#map)
+  - [number](./CLAUDE.md#number)
+  - [object](./CLAUDE.md#object)
+  - [regex](./CLAUDE.md#regex)
+  - [set](./CLAUDE.md#set)
+  - [string](./CLAUDE.md#string)
+  - [validate](./CLAUDE.md#validate)
+  - [Averaging a list (the hand-rolled pattern)](./CLAUDE.md#averaging-a-list-the-hand-rolled-pattern)
 
 ---
 

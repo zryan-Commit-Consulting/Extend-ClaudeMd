@@ -465,3 +465,84 @@ Referenced from a PMD like any other card (`cardId` must match the card file nam
 ```
 
 Each `taskId` referenced by a pill must exist in the AMD `tasks` array.
+
+## Workday Script built-in functions
+
+This is the **complete** list of available built-in functions (user-provided, authoritative). If a function is not on this list, it does not exist — do not invent one. Two call styles appear:
+
+- **Namespace/static form** — the target is the first argument: `list:filter(myList, 'type', 'functional')`, `regex:replace(text, regex, replacement)`.
+- **Method form** — called on the value itself: `myList.size()`, `myString.trim()`, `myDate.plusDays(5)`.
+
+Signatures below use the doc's own convention: an entry with no leading target argument (e.g. `filter (closure)`) is the method form; one whose first parameter is the collection (e.g. `filter (list, key, value)`) is the namespace form. Many functions offer both.
+
+### IMPORTANT gaps to plan around
+- **There is NO built-in `sum`, `average`, `count`, or `round`.** Aggregations must be hand-rolled — use `map` + `reduce` for a sum, then divide by `size()`. Guard against an empty list (`size() == 0`) since dividing by zero and reducing an empty list both fail.
+- `number:` has `max`, `min`, `pow`, `sqrt`, `toBigDecimal`, and the two int converters — nothing else arithmetic.
+- Closures use the `item => { expression }` form (e.g. `errors.map(item => { item.error })`).
+
+### bool
+`all (expression1, expressionN)` · `any (expression1, expressionN)`
+
+### bpfTaskHelper
+`fetchTaskType (businessProcessTask)`
+
+### converter
+`booleanAsInt (expression)` · `booleanAsString (expression)`
+
+### date
+`add (precision, duration)` · `between (date2, precision)` · `after (date1, date2)` · `checkTodaysDate (timeZone)` · `createMonth (mm, yyyy)` · `createYear (yyyy)` · `extractValue (precision, date)` · `format (dateFormat)` · `formatDateWithTimeZones (date, inputTimeZone, inputDateTimeFormat, outputTimeZone, outputDateTimeFormat)` · `formatWithTimeZone (dateFormat, timeZone)` · `get (precision)` · `getDateTimeZone (timeZone)` · `getTodaysDate (timeZone)` · `getTodaysDateFormatted (timeZone, dateTimeFormat)` · `minusDays (days)` · `minusHours (hours)` · `minusMinutes (minutes)` · `minusMonths (months)` · `minusNanos (nanoseconds)` · `minusSeconds (seconds)` · `minusWeeks (weeks)` · `minusYears (years)` · `month ( )` · `now ( )` · `now (timeZoneString)` · `parse (dateString)` · `parse (dateString, dateFormat)` · `parse (dateString, dateFormat, timeZoneString)` · `parseDateString (dateString)` · `parseFormattedDateString (dateString, dateFormat)` · `plusDays (days)` · `plusHours (hours)` · `plusMinutes (minutes)` · `plusMonths (months)` · `plusNanos (nanoseconds)` · `plusSeconds (seconds)` · `plusWeeks (weeks)` · `plusYears (years)` · `timeAfter (date2)` · `toString ( )` · `withDayOfMonth (dayOfMonth)` · `withDayOfYear (dayOfYear)` · `withHour (hour)` · `withMinute (minute)` · `withMonth (month)` · `withNano (nanosecond)` · `withSecond (second)` · `withYear (year)` · `year ( )`
+
+### file
+`byteCountToDisplaySize (size)`
+
+### fileType
+`getFileType (fileName)`
+
+### graph
+`createId(id)` · `createId(id, idType)` · `createId(ids)` · `createId(ids, idType)` · `createIds(ids)` · `createIds(ids, idType)`
+
+### grid
+`getSubtotal (grid, columnId)`
+
+### json
+`asJSON (object)` · `attribute (key, value)` · `create (attribute1, attributeN)` · `parse (jsonString)` · `stringify (object)` · `query (source, jsonPath)` · `query (source, jsonPath, resultsAsList)`
+
+### list
+`add (element)` · `add (index, element)` · `add (list, object, index)` · `addAll (elements)` · `addAll (index, elements)` · `clear ( )` · `contains (element)` · `containsAll (elements)` · `createMapList (list, key)` · `createMapListWithKeys (list, keyList)` · `distinct ( )` · `emptyList ( )` · `exclude (list, key, value)` · `excludeEmptyAttribute (list, key)` · `excludeMultiple (list, key, comparisonList)` · `excludeRegex (list, regexValue)` · `filter (closure)` · `filter (closure(item, index))` · `filter (list, key, value)` · `filterEmptyAttribute (list, key)` · `filterMultiple (list, key, comparisonList)` · `filterRegex (list, regexValue)` · `find (closure)` · `first ( )` · `firstNonEmpty (param1, paramN)` · `flatten (list)` · `forEach (closure)` · `forEach (closure(item, index))` · `get (index)` · `indexOf (element)` · `indexOf (object, list)` · `isEmpty ( )` · `isList (object)` · `join ( )` · `join (list1, list2)` · `join (separator)` · `last ( )` · `lastIndexOf (element)` · `map (closure)` · `map (closure(item, index))` · `mapAttribute (list, key)` · `mapBeanAttribute (listOfBeans, beanProperty)` · `nonNull (list)` · `reduce (closure)` · `remove (element)` · `removeAll (elements)` · `retainAll (elements)` · `reverse ( )` · `set (index, element)` · `size ( )` · `sort ( )` · `sort (closure)` · `sort (list, key, ascendingOrder)` · `subList (fromIndex, toIndex)` · `toJson ( )` · `toList (value1, valueN)` · `toListIncludeNull (value1, valueN)` · `toMap (list, key)` · `toString ( )`
+
+### map
+`add (key, value)` · `addAll (anotherMap)` · `clear ( )` · `containsKey (key)` · `containsValue (value)` · `filter (closure)` · `forEach (closure)` · `get (key)` · `getKeys (map)` · `getObject (map, key)` · `getValues (map)` · `getValuesFromKeys (map, keys)` · `isEmpty ( )` · `keys ( )` · `map (closure)` · `mapKey (closure)` · `mapValue (closure)` · `put (key, value)` · `remove (key)` · `size ( )` · `toJson ( )` · `toString ( )` · `values ( )`
+
+### number
+`convertNumberToInt (number)` · `convertStringToInt (string)` · `max (number1, numberN)` · `min (number1, numberN)` · `pow (base, exponent)` · `sqrt (number)` · `toBigDecimal (arithmeticExpression, scale, roundingMode)`
+
+### object
+`defaultIfNull (object, default)` · `firstNonNull (object1, objectN)`
+
+### regex
+`find (text, regex)` · `match (text, regex)` · `replace (text, regex, replacement)` · `replaceOnce (text, regex, replacement)` · `split (text, regex)`
+
+### set
+`add (element)` · `addAll (elements)` · `clear ( )` · `contains (element)` · `containsAll (elements)` · `filter (closure)` · `find (closure)` · `forEach (closure)` · `isEmpty ( )` · `join ( )` · `join (separator)` · `map (closure)` · `reduce (closure)` · `remove (element)` · `size ( )` · `toJson ( )` · `toString ( )`
+
+### string
+`abbreviate (maxWidth)` · `capitalize ( )` · `concat (string1, string2)` · `contains (searchString)` · `contains (string, substring)` · `containsIgnoreCase (searchString)` · `defaultIfBlank (defaultString)` · `defaultIfEmpty (defaultString)` · `endsWith (suffix)` · `endsWithIgnoreCase (suffix)` · `formatListToString (separator, list)` · `formatMessage (messageWithParameters, orderedParameters)` · `fuzzyMatchIndex (list, comparisonValue)` · `fuzzyMatchString (list, comparisonValue)` · `fuzzyScore (query)` · `indexOf (searchString)` · `indexOf (substring, startIndex)` · `isAllLowerCase ( )` · `isAllUpperCase ( )` · `isBlank ( )` · `isNumber ( )` · `isNumeric ( )` · `isString (value)` · `join (array, separator)` · `join (string1, stringN)` · `lastIndexOf (searchString)` · `lastIndexOf (subString, fromIndex)` · `leftPad (size)` · `leftPad (size, padCharacter)` · `length ( )` · `lowerCase ( )` · `lowerCase (locale)` · `pathEncode ( )` · `remove (subString)` · `removeEnd (subString)` · `removeEndIgnoreCase (subString)` · `removeStart (subString)` · `removeStartIgnoreCase (subString)` · `replace (searchString, replacement)` · `replaceIgnoreCase (searchString, replacement)` · `replaceOnce (searchString, replacement)` · `replaceOnceIgnoreCase (searchString, replacement)` · `replaceSubstring (string, origSubstring, newSubstring)` · `reverse ( )` · `rightPad (size)` · `rightPad (size, padCharacter)` · `size ( )` · `split (separatorChars)` · `splitByRegex (regex)` · `startsWith (prefix)` · `startsWith (string, substring, startIndex)` · `startsWithIgnoreCase (prefix)` · `stripPrefix (prefix)` · `stripSuffix (suffix)` · `substring (startIndex)` · `substring (startIndex, endIndex)` · `substringAfter (separator)` · `substringAfterLast (separator)` · `substringBefore (separator)` · `substringBeforeLast (separator)` · `toDecimal ( )` · `toDecimal (scale, mode)` · `toInt ( )` · `toString ( )` · `trim ( )` · `trimToEmpty ( )` · `truncate (maxWidth)` · `truncate (offset, maxWidth)` · `uncapitalize ( )` · `upperCase ( )` · `upperCase (locale)` · `urlDecode ( )` · `urlEncode ( )` · `uuid ( )`
+
+### validate
+`match (regex, comparisonString)`
+
+### Averaging a list (the hand-rolled pattern)
+
+Since there is no `sum`/`average`, average a numeric attribute like this — note the empty-list guard, which is required:
+
+```
+<% myList.size() == 0
+     ? 0
+     : number:convertNumberToInt(
+         myList.map(item => { item.progress }).reduce((runningTotal, value) => { runningTotal + value })
+         / myList.size()
+       )
+%>
+```
+
+Keep percentages stored as **bare numbers** (`"progress": 85`) and append the `%` only at render time (`value.toString() + '%'`). Storing `"85%"` makes the value a display string and forces a `substringBefore('%')` + `toInt()` round-trip before any arithmetic.
