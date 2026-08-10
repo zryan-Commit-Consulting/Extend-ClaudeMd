@@ -4,7 +4,7 @@ My user-level Claude Code instructions, mirrored from `~\.claude\CLAUDE.md`.
 
 This README is generated from the headings in [CLAUDE.md](./CLAUDE.md) — do not edit it by hand; edit the source instructions and the next sync will rewrite it.
 
-**11 topics** · last updated 2026-08-06 14:23
+**11 topics** · last updated 2026-08-10 11:43
 
 ## Contents
 

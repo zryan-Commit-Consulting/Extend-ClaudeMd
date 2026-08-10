@@ -39,6 +39,7 @@ Grid columns are NOT typed widgets placed directly in `columns`. Putting `"type"
 - The grid declares `rowVariableName` (e.g. `"swagRow"`); cell bindings reference THAT alias, not `row` — e.g. `<% swagRow.name %>`.
 - Each column is `{ "type": "column", "columnId": "...", "label": "...", "cellTemplate": { <widget> } }`.
 - The actual widget (`text`, `number`, `dropdown`, `date`, `checkBox`, etc.) lives inside `cellTemplate` with its own `id` and `value`.
+- **`required` goes on the `column`, NOT on the `cellTemplate` widget.** In a grid, mark a column required at the column level: `{ "type": "column", "columnId": "statusColumn", "label": "Status", "required": true, "cellTemplate": { ... } }`. (Outside a grid, `required` sits on the widget itself as usual.)
 - Editable grid: start with `"rows": "<% [] %>"`; users add/remove rows via the +/trash icons. Set `isArrayOutBinding: true` to submit all rows as one outbound array.
 - Read-only display grid: set `readOnly: true` on the grid.
 
