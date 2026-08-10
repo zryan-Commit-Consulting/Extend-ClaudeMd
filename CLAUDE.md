@@ -543,14 +543,14 @@ Since there is no `sum`/`average`, average a numeric attribute like this — not
 ```
 <% myList.size() == 0
      ? '0%'
-     : (myList.map(item => { item.progress ?? 0 })
-              .reduce((runningTotal, value) => { runningTotal + value })
-        / myList.size()
-       ).toString().substringBefore('.') + '%'
+     : ('' + (myList.map(item => { item.progress ?? 0 })
+                    .reduce((runningTotal, value) => { runningTotal + value })
+              / myList.size()
+             )).substringBefore('.') + '%'
 %>
 ```
 
-`substringBefore('.')` truncates the decimal — it returns the whole string unchanged when there's no `.`, so it is safe whether the division yields `53.33` or a clean `100`. Do NOT reach for `number:convertNumberToInt` here; it throws `Unknown Function call`.
+The leading `'' +` is what makes the quotient a string — without it, neither `.substringBefore(...)` nor `+ '%'` is legal on a number. `substringBefore('.')` then truncates the decimal, and returns the string unchanged when there's no `.`, so it is safe whether the division yields `53.33` or a clean `100`. Do NOT reach for `number:convertNumberToInt` here; it throws `Unknown Function call`.
 
 When comparing an average against exact boundaries (0 or 100), skip rounding entirely and compare the raw quotient — those cases are exact.
 
