@@ -4,7 +4,7 @@ My user-level Claude Code instructions, mirrored from `~\.claude\CLAUDE.md`.
 
 This README is generated from the headings in [CLAUDE.md](./CLAUDE.md) — do not edit it by hand; edit the source instructions and the next sync will rewrite it.
 
-**15 topics** · last updated 2026-08-11 16:56
+**16 topics** · last updated 2026-08-11 17:01
 
 ## Contents
 
@@ -16,6 +16,13 @@ This README is generated from the headings in [CLAUDE.md](./CLAUDE.md) — do no
 - [Widget validation — `onChange` + `setError` / `clearError`](./CLAUDE.md#widget-validation--onchange--seterror--clearerror)
 - [grid widget](./CLAUDE.md#grid-widget)
 - [AMD task registration](./CLAUDE.md#amd-task-registration)
+- [instanceList widget](./CLAUDE.md#instancelist-widget)
+  - [Populating the list — the three attributes are MUTUALLY EXCLUSIVE](./CLAUDE.md#populating-the-list--the-three-attributes-are-mutually-exclusive)
+  - [Selecting: getting and setting](./CLAUDE.md#selecting-getting-and-setting)
+  - [Searching: `onSearch` vs `searchEndPoint`](./CLAUDE.md#searching-onsearch-vs-searchendpoint)
+  - [Cascading lists via `onChange`](./CLAUDE.md#cascading-lists-via-onchange)
+  - [Persisting](./CLAUDE.md#persisting)
+  - [Related actions menu (VIEW pages)](./CLAUDE.md#related-actions-menu-view-pages)
 - [WQL Query components](./CLAUDE.md#wql-query-components)
 - [PMD page naming convention](./CLAUDE.md#pmd-page-naming-convention)
 - [Flow definitions](./CLAUDE.md#flow-definitions)

@@ -116,6 +116,55 @@ Grid columns are NOT typed widgets placed directly in `columns`. Putting `"type"
 ## AMD task registration
 Pages are registered in a `tasks` array in the **AMD**. Each entry: `{ "id": "<TaskId>", "routingPattern": "/...", "page": { "id": "<PageId>" } }`. The task `id` is what `taskId` references (hub `initialTask`/`navigationTasks`, flow `flowSteps`, button `taskReference`). The Home/landing task typically uses `"routingPattern": "/"`.
 
+## instanceList widget
+
+An `instanceList` presents Workday instances (`{ id, descriptor }`) for display or selection.
+
+### Populating the list — the three attributes are MUTUALLY EXCLUSIVE
+- **`values`** (most common) — endpoint data, a list whose items have root-level `id` and `descriptor`. Override those field names with `idKey` / `displayKey`. To reshape nested data, use scripting: `"values": "<% workers.data.map(w => { { 'id': w.person.id, 'descriptor': w.person.email } }) %>"`.
+- **`instanceList`** — a hard-coded array of `{ id, descriptor }`.
+- **`instanceListLoopTag`** — an `instanceLoop` with a `templateInstance`, `on`, and `as`. **Workday recommends scripting with `values` instead**; prefer that.
+
+### Selecting: getting and setting
+- `multiSelect` (default false) — allow multiple selections.
+- **`value`** returns an **array of IDs**. Use `value[0]` for the single/first selection.
+- **`selectedEntries`** returns maps — `selectedEntries[0].descriptor` gets the display text.
+- `selectedValues` — default selections by ID; **must be a subset of `values`/`instanceList`**.
+- `selectedValuesAndDescriptors` — default selections as full `{ id, descriptor }` objects; **does NOT need to be a subset**. Use this when the saved value may not be in the loaded list (e.g. a persisted worker in a grid row).
+- **`selectedValues` and `selectedValuesAndDescriptors` can ONLY be set at page load — never from an event handler.** From script, call `setValue()` instead.
+- **`setValue([idList])` vs `setValues([idAndDescriptorList])`** — `setValue` sets the *selection* (IDs only); `setValues` replaces the *available options* (id + descriptor). Easy to mix up.
+
+### Searching: `onSearch` vs `searchEndPoint`
+
+**In a grid or panelList, use `onSearch`.** `searchEndPoint` has **global page context** and doesn't know which row or panel fired it; `onSearch` does.
+
+- **`onSearch`** — triggers when the user types in the prompt. `event.query` (read-only) holds the search string. **The handler's return value becomes the list.** It sees sibling widgets in the same row/panel.
+  ```json
+  { "type": "instanceList", "id": "ownerInstanceList", "multiSelect": false,
+    "values": "<% row.owner ?? [] %>",
+    "onSearch": "<% empty event.query ? [] : (searchWorkers.invoke({ 'q': event.query }).data ?? []) %>" }
+  ```
+  with a **deferred** endpoint whose URL/parameters reference the invoke key bare (`<% q %>`).
+- **`searchEndPoint` + `searchResultValues`** (both required, non-grid contexts) — a **deferred** endpoint using the `instanceListQuery` variable for the typed text, guarded with `"exclude": "<% empty instanceListQuery %>"`. On the widget: `"searchEndPoint": "<% endpoints.workerSearch %>"`, `"searchResultValues": "<% workerSearch.data %>"`. Only ONE endpoint allowed. Users can pick from both search results and preloaded values.
+- `searchValues` — local search data for multilevel lists (with `monikerLevels`), avoiding an endpoint. If both `searchValues` and `searchEndPoint` are set, **`searchEndPoint` wins**.
+
+**Always initialize `values` at page load** (even to `<% [] %>`) when a list is populated by an event.
+
+### Cascading lists via `onChange`
+`onChange` fires on selection. Populate a dependent list by invoking a **deferred** endpoint and calling `setValues()` on the target, which must itself be initialized (`"values": "<% [] %>"`):
+```json
+"onChange": "<% if (!empty(self.value)) {
+     orgMembersList.setValues(orgMembers.invoke({ 'id': self.value[0] }).data);
+     orgMembersList.setValue(orgMembers.invoke({ 'id': self.value[0] }).data.map(i => { i.id }));
+   } else { orgMembersList.setValues([]); } %>"
+```
+
+### Persisting
+`valueOutBinding` binds the selected ID to one outbound field; `valuesOut` binds to several. A map-returning endpoint must be wrapped as a list: `"values": "<% [worker] %>"`.
+
+### Related actions menu (VIEW pages)
+Enabling it also enables the instance view link. Which attribute depends on how the list is populated: `widKey` (with `values`), or `wid` on the instance (with `instanceList`) / on `templateInstance` (with `instanceListLoopTag`). Disable pieces with `view: false` (link) and `relatedTask: false` (menu).
+
 ## WQL Query components
 
 A **WQL Query component** is a reusable query (Workday Query Language) living in its own `.wqlquery` file, referenced by inbound endpoints. Use one to simplify a complex WQL endpoint, pass query parameters, or share a query across PMDs. In App Builder they're under **Queries > WQL Queries**, and they can currently only be opened in **Code mode**.
