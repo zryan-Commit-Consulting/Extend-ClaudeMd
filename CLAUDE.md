@@ -33,6 +33,52 @@ Component IDs are always **camelCase** and **end with the component type**.
   { "type": "image", "id": "workerImage", "userPhoto": true }
   ```
 
+## date widget
+
+`"type": "date"` renders a calendar picker. On VIEW pages it's a non-editable text field; on EDIT pages the month/day/year fields are editable. The value's data type is **Date** (date + time + time zone). **To empty a date, set it to `null`, never `''`** — `myDate.setValue(null)`.
+
+**Display attributes** (all optional):
+- `dateFormat` — how to PARSE the *inbound* string. Default `yyyy-MM-dd HH:mm:ss.SSS`. **Model component REST APIs return `yyyy-MM-dd'T'HH:mm:ss.SSS'Z'`, so a date coming from an EBO endpoint usually needs this set explicitly.** If `dateFormat` doesn't match the inbound string, the widget renders **empty** (silent failure — check this first when a date won't display).
+- `dateDisplayPattern` — display format on VIEW pages. Default `MM/dd/yyyy` (or `MM/dd/yyyy hh:mm:ss AM/PM` when `datePrecision` includes time). **EDIT pages IGNORE this** and use the signed-in user's preferred display language.
+- `datePrecision` — `YEAR` | `MONTH` | `DAY` (default) | `HOUR` | `MINUTE` | `SECOND` | `MILLISECOND`. Time only displays if set to HOUR or finer.
+- `inputTimeZone` — time zone of the inbound string. Default UTC.
+- `displayTimeZone` — time zone used to display. Default UTC. Use `"<% userTimeZone %>"` (predefined app variable) for the signed-in user's zone.
+
+**Submitting a date:** format it in `valuesOut` with `format(dateFormat)` (UTC) or `formatWithTimeZone(dateFormat, timeZone)`. Inside a grid cell this works the same way:
+```json
+{ "type": "column", "columnId": "dateColumn", "label": "Date",
+  "cellTemplate": {
+    "type": "date", "id": "expenseDateDate",
+    "value": "<% rowdata.date ?? pageVariables.defaultDate %>",
+    "valuesOut": [ { "value": "<% self.value.format('yyyy-MM-dd') %>", "valueOutBinding": "postExpense.date" } ]
+  } }
+```
+Note the escaping when a literal is embedded in the pattern: `'yyyy-MM-dd\\'T\\'HH:mm:ss.SSS\\'Z\\''`.
+
+Other attributes: `enabled`, `guide`, `helpText`, `id`, `label` (max 255 chars), `render`, `required`, `sortOrder`, `value`, `valueOutBinding`, `valuesOut`, `visible`.
+
+**`visible: false` DROPS the widget's `valueOutBinding`/`valuesOut` from the outbound payload** (true for widgets generally). To submit a hidden value, add it back in `onSend`.
+
+## Widget validation — `onChange` + `setError` / `clearError`
+
+This is the mechanism for conditional/cross-field validation, including **inside a grid `cellTemplate`**. `onChange` fires when the user changes the widget's value; `self` is the widget. Call `setError(msg)` to push a message into the page error window (blocking), `clearError()` to remove it. Always clear on the passing branch — an error set once persists until cleared.
+
+```json
+{ "type": "date", "id": "sendByDate", "label": "Send By",
+  "value": "<% row.sendBy %>",
+  "onChange": "<% empty self.value || empty deadlineDate.value
+                    ? self.clearError()
+                    : (date:after(self.value, deadlineDate.value)
+                         ? self.setError('Send By can\\'t be later than the deadline.')
+                         : self.clearError()) %>" }
+```
+
+Compare a Date against another **widget's** value, not a raw inbound string — the widget has already parsed the string into a Date object.
+
+**Scripting methods available on widgets:** `clearError()`, `clearWarning()`, `setError(String)`, `setWarning(String)` (non-blocking), `getLabel()` / `setLabel(String)`, `getValue()` / `setValue(Object)`, `getValueOutBinding()` / `setValueOutBinding(String)`, `isEnabled()` / `setEnabled(boolean)`, `isRequired()` / `setRequired(boolean)`, `isVisible()` / `setVisible(boolean)`, `isUpdated()` (changed by the end user), `isUpdatedByScript()` (changed by a PMD script).
+
+`setVisible()` only works reliably when the widget is inside a `fieldSet`.
+
 ## grid widget
 Grid columns are NOT typed widgets placed directly in `columns`. Putting `"type": "text"`/`"number"` as the column type errors with "invalid tag" — those types are only valid INSIDE a `cellTemplate`.
 

@@ -4,7 +4,7 @@ My user-level Claude Code instructions, mirrored from `~\.claude\CLAUDE.md`.
 
 This README is generated from the headings in [CLAUDE.md](./CLAUDE.md) — do not edit it by hand; edit the source instructions and the next sync will rewrite it.
 
-**12 topics** · last updated 2026-08-10 14:56
+**14 topics** · last updated 2026-08-11 16:10
 
 ## Contents
 
@@ -12,6 +12,8 @@ This README is generated from the headings in [CLAUDE.md](./CLAUDE.md) — do no
 - [ID naming convention](./CLAUDE.md#id-naming-convention)
 - [Edit pages](./CLAUDE.md#edit-pages)
 - [Widget types](./CLAUDE.md#widget-types)
+- [date widget](./CLAUDE.md#date-widget)
+- [Widget validation — `onChange` + `setError` / `clearError`](./CLAUDE.md#widget-validation--onchange--seterror--clearerror)
 - [grid widget](./CLAUDE.md#grid-widget)
 - [AMD task registration](./CLAUDE.md#amd-task-registration)
 - [PMD page naming convention](./CLAUDE.md#pmd-page-naming-convention)
