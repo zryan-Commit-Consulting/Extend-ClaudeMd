@@ -116,6 +116,64 @@ Grid columns are NOT typed widgets placed directly in `columns`. Putting `"type"
 ## AMD task registration
 Pages are registered in a `tasks` array in the **AMD**. Each entry: `{ "id": "<TaskId>", "routingPattern": "/...", "page": { "id": "<PageId>" } }`. The task `id` is what `taskId` references (hub `initialTask`/`navigationTasks`, flow `flowSteps`, button `taskReference`). The Home/landing task typically uses `"routingPattern": "/"`.
 
+## WQL Query components
+
+A **WQL Query component** is a reusable query (Workday Query Language) living in its own `.wqlquery` file, referenced by inbound endpoints. Use one to simplify a complex WQL endpoint, pass query parameters, or share a query across PMDs. In App Builder they're under **Queries > WQL Queries**, and they can currently only be opened in **Code mode**.
+
+**The query string is automatically URL-encoded** when sent to the tenant — do NOT wrap it in `string:urlEncode` (true for both `queryId` components and the inline `wqlQuery` attribute).
+
+**Component attributes:**
+- `id` (string, **required**) — must match the `queryId` of the endpoint referencing it.
+- `query` (stringScript, **required**) — the WQL. **Max 2048 characters.** Parameters are interpolated with `<% %>`.
+- `parameters` (list of strings) — unordered list of parameter names the endpoint may pass in. **A WQL Query component is self-contained and has NO page context** — `pageVariables`, `queryParams`, widget ids, etc. are not visible inside it. Anything page-specific must arrive through `parameters`.
+- `limit` (numberScript) — max objects per response, ceiling **10,000**.
+- `offset` (numberScript) — zero-based index of the first object. Default 0. Pair with `limit` for paging (limit 5 + offset 9 returns 5 objects starting at the 10th).
+
+```json
+{
+  "id": "getWorkersHiredAfter",
+  "parameters": ["locationId", "hireDate", "offsetParam", "limitParam"],
+  "query": "
+      SELECT worker, businessTitle, employeeID, hireDate
+      FROM workersForHCMReporting(dataSourceFilter=allActiveWorkers)
+      WHERE location in (\"<% locationId %>\") and hireDate >= \"<% hireDate %>\"
+  ",
+  "offset": "\"<% offsetParam %>\"",
+  "limit": "\"<% limitParam %>\""
+}
+```
+
+**Endpoint `wqlQuery` attribute** (on a PMD inbound endpoint hitting WQL `GET /data` or `POST /data`):
+- `query` — an inline WQL string. **Mutually exclusive with `queryId`.** Page script variables ARE visible here (unlike in a component). Embed literal strings with escaped double quotes.
+- `queryId` — static string, the `id` of a WQL Query component.
+- `parameters` — map used WITH `queryId`. Key = parameter name matching the component's `parameters`; value = a script or any literal (boolean, string, number, JSON map/array).
+- `limit` / `offset` — used with the inline `query` form.
+
+```json
+"endPoints": [
+  {
+    "baseUrlType": "workday-wql",
+    "name": "getWorkersHiredAfter",
+    "url": "data",
+    "wqlQuery": {
+      "queryId": "getWorkersHiredAfter",
+      "parameters": {
+        "locationId": "<% pageVariables.locationId %>",
+        "hireDate": "<% pageVariables.hireDate %>",
+        "offsetParam": "<% pagingVariables.offset ?? 0 %>",
+        "limitParam": "<% pagingVariables.limit ?? 50 %>"
+      }
+    }
+  }
+]
+```
+
+`offsetParam`/`limitParam` pair naturally with a grid's `pagingInfo` attribute via `pagingVariables`.
+
+The AMD needs a matching data provider, e.g. `{ "key": "workday-wql", "value": "https://api.workday.com/wql/v1/" }` (with `"url": "data"` on the endpoint). Some apps instead fold `/data` into the provider value and omit `url` — follow whichever the repo already does.
+
+Note: Developer Copilot can generate WQL queries, but **not** WQL query components with parameters.
+
 ## PMD page naming convention
 All PMD pages are named using **PascalCase** (e.g. `Dashboard`, `StartOETracker`, `PastOEs`). This applies to the page `id` and its task ID.
 

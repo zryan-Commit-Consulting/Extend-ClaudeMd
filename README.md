@@ -4,7 +4,7 @@ My user-level Claude Code instructions, mirrored from `~\.claude\CLAUDE.md`.
 
 This README is generated from the headings in [CLAUDE.md](./CLAUDE.md) — do not edit it by hand; edit the source instructions and the next sync will rewrite it.
 
-**14 topics** · last updated 2026-08-11 16:10
+**15 topics** · last updated 2026-08-11 16:56
 
 ## Contents
 
@@ -16,6 +16,7 @@ This README is generated from the headings in [CLAUDE.md](./CLAUDE.md) — do no
 - [Widget validation — `onChange` + `setError` / `clearError`](./CLAUDE.md#widget-validation--onchange--seterror--clearerror)
 - [grid widget](./CLAUDE.md#grid-widget)
 - [AMD task registration](./CLAUDE.md#amd-task-registration)
+- [WQL Query components](./CLAUDE.md#wql-query-components)
 - [PMD page naming convention](./CLAUDE.md#pmd-page-naming-convention)
 - [Flow definitions](./CLAUDE.md#flow-definitions)
   - [flowVariables — passing values across pages in a flow](./CLAUDE.md#flowvariables--passing-values-across-pages-in-a-flow)
