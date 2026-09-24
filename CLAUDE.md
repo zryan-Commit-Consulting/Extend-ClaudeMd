@@ -619,6 +619,95 @@ Referenced from a PMD like any other card (`cardId` must match the card file nam
 
 Each `taskId` referenced by a pill must exist in the AMD `tasks` array.
 
+## Business objects (Extend model components)
+
+Business objects define an app's data model: they extend Workday's single object model, persist app data, and can relate to each other and to Workday-delivered objects. Extend **automatically generates report data sources and REST API endpoints** for each one. Author them in App Builder as a **Business Object** component (Code mode shown below).
+
+- **A business object's `id` can never be changed** once created.
+- **Don't end business object names with a numeral.**
+- Use model business objects for stand-alone data. To add custom fields to an existing Workday-delivered object, use **custom objects** instead.
+
+### Object-level attributes
+- `defaultSecurityDomains` (string array, **required, min 1**) — security domains controlling access. Only names of security domains defined **in the same app**.
+- `defaultCollection` — `id`, `name`, `label`, optional `description`:
+  - `name` → the **REST API resource name** for all instances. Recommend plural (e.g. `charities`).
+  - `label` → the unfiltered **report data source** name. Recommend `All` + plural (e.g. `All Charities`).
+  - `description` → the data source's Description in the Business Object Details report.
+- `fields` / `derivedFields` — arrays of field definitions (below).
+
+### Field-level attributes (all field types)
+- `name` and `label` must be **unique within the business object** (or attachment object).
+- `securityDomains` (optional string array) — overrides the object's `defaultSecurityDomains` for this field. Same-app domains only.
+- `isPurgeable` (optional boolean) — `true` lets Extend purge data stored in the field.
+- `enableIndex` (optional boolean) — index the field; Extend generates **query parameters** for all indexed fields.
+  - Max **5** regular indexed fields per business object / attachment.
+  - Only fields secured by the object's **default** security domains can be indexed.
+  - **Cannot** index derived fields or `MULTI_INSTANCE` fields.
+  - `SINGLE_INSTANCE` fields are indexed **automatically** — no need to set it.
+
+### Field types and their extra attributes
+- **`TEXT`**
+  - `isReferenceId` — marks the field as the object's **Reference ID**. The field becomes required and can't be deleted. **Once per object.** Field name can't contain `\` `"` `/` `+` `;`. Values must be **unique** — adding it to a model with duplicate data **fails deployment**, so set it before loading data. The Reference ID Type (under Integration IDs) is the object name + `_ID` (e.g. `Charity_ID`).
+  - `enableSearch` — lets users pick values from a prompt when filtering by instance in a custom report (and in the Comparison Value prompt). **Required for use in a Discovery Board filter.** Max **3** TEXT fields **per app**. **Requires `enableIndex: true`.** Values must be unique (same deployment-failure caveat) — set before loading data.
+  - `useForDisplay` — this field's content becomes the object's display value / descriptor. **Once per object.**
+- **`RICH_TEXT`** — stores formatted markup (bold, italics, lists). Pair with the `richText` widget on PMD pages. Does **NOT** support `enableIndex`, `enableSearch`, `isReferenceId`, or `useForDisplay`. Only for **new** fields — you can't change an existing field's type in promoted apps (IMPL/SBOX/PROD).
+- **`DATE`** — `precision`: `MILLISECOND` | `SECOND` | `MINUTE` | `HOUR` | `DAY` | `MONTH` | `YEAR`.
+- **`DECIMAL`** — `decimals`: up to **10** decimal places.
+- **`INTEGER`**, **`CURRENCY`**, **`BOOLEAN`** — no extra attributes.
+- **`SINGLE_INSTANCE`**
+  - `target` — name of another business object **in the same app** or a Workday-delivered object (e.g. `WORKER`, `COST_CENTER`, `COMPANY`).
+  - `secureByTarget` — `true` delegates contextual security to the target instance *in addition to* the object's own security. Can be set on **multiple** SINGLE_INSTANCE fields; security is then the aggregation of those contexts (enables BP routing/approval to multiple recipients).
+  - `useForDisplay` — allowed (once per object).
+- **`MULTI_INSTANCE`**
+  - `target` — same as SINGLE_INSTANCE.
+  - **Cannot** set `secureByTarget` or `useForDisplay`.
+  - **A SINGLE_INSTANCE field can't be converted to MULTI_INSTANCE.**
+  - Keep instances per field **below ~1,000** for performance.
+
+**`useForDisplay` on attachment objects:** by default an attachment's descriptor is its `fileName`. Setting `useForDisplay` on an attachment field makes that field the descriptor instead — so don't use the descriptor as the file name in `fileUploader`/`attachmentList`; reference `fileName` explicitly: `"attachmentName": "<% getData.image.fileName %>"`.
+
+**CURRENCY in API requests:** adding/updating a CURRENCY field requires **both** `currency` and `value` in the body:
+```json
+{ "name": "DogsMatter", "minDonationAmount": { "currency": "USD", "value": "50" } }
+```
+
+### Derived fields
+Defined in `derivedFields` with an `expression`. Same attributes as standard fields, but **`CURRENCY` and `SINGLE_INSTANCE` types are NOT supported**, and derived fields can't be indexed. Expressions can reference other fields (including through a SINGLE_INSTANCE, e.g. `logo.uploadedDate`) and other derived fields.
+
+### Reserved field names
+- **Case-sensitive, all fields:** `attachmentContent`, `contentType`, `descriptor`, `displayID`, `filename`, `fileLength`, `id`, `wid`, `workdayID`.
+- **Case-insensitive, all fields:** `select`, `from`, `where`, `limit`, `order`, `having`, `group`, `by`, `asc`, `desc`, `as`, `and`, `or`, `not`, `is`, `null`, `empty`, `in`, `datasourcefilter`, `entrymoment`, `effectivemoment`.
+- **Case-sensitive, SINGLE_INSTANCE or `enableIndex: true` fields:** `offset`, `bulk`, `search`, `sort`, `type`, `view`, `name`. (Note: `name` is fine on an ordinary unindexed TEXT field, as in the example below — but not if you index it.)
+
+### Example
+```json
+{
+  "id": 1,
+  "name": "Charity",
+  "label": "Charity",
+  "defaultSecurityDomains": ["ManageCharities"],
+  "defaultCollection": { "name": "charities", "label": "All Charities" },
+  "fields": [
+    { "id": 1, "name": "name", "type": "TEXT", "label": "Name", "useForDisplay": true, "isReferenceId": true },
+    { "id": 2, "name": "description", "type": "TEXT", "label": "Description" },
+    { "id": 3, "name": "matchDonations", "type": "BOOLEAN", "label": "Match Donations" },
+    { "id": 4, "name": "relationshipManager", "type": "SINGLE_INSTANCE", "label": "Relationship Manager", "target": "WORKER" },
+    { "id": 5, "name": "logo", "type": "SINGLE_INSTANCE", "label": "Logo", "target": "CharityLogo" },
+    { "id": 6, "name": "createdBy", "label": "Created By", "type": "SINGLE_INSTANCE", "target": "WORKER", "secureByTarget": true },
+    { "id": 7, "name": "costCenter", "label": "Cost Center", "type": "SINGLE_INSTANCE", "target": "COST_CENTER", "secureByTarget": true },
+    { "id": 8, "name": "company", "label": "Company", "type": "SINGLE_INSTANCE", "target": "COMPANY", "secureByTarget": true }
+  ],
+  "derivedFields": [
+    { "id": 1, "name": "logoUploadedBefore2022", "type": "BOOLEAN", "label": "Logo Before 2022",
+      "expression": "logo.uploadedDate.toYear().toNumber() < 2022" },
+    { "id": 2, "name": "logoLabel", "type": "TEXT", "label": "Logo Label",
+      "expression": "logoUploadedBefore2022 ? 'Old Image' : 'New Image'" },
+    { "id": 3, "name": "workdayMatched", "type": "BOOLEAN", "label": "Workday Matched Charity",
+      "expression": "matchDonations && (description == 'Workday Charity')" }
+  ]
+}
+```
+
 ## Workday Script built-in functions
 
 This is the **complete** list of available built-in functions (user-provided, authoritative). If a function is not on this list, it does not exist — do not invent one. Two call styles appear:

@@ -4,7 +4,7 @@ My user-level Claude Code instructions, mirrored from `~\.claude\CLAUDE.md`.
 
 This README is generated from the headings in [CLAUDE.md](./CLAUDE.md) — do not edit it by hand; edit the source instructions and the next sync will rewrite it.
 
-**16 topics** · last updated 2026-08-11 17:01
+**17 topics** · last updated 2026-09-24 14:56
 
 ## Contents
 
@@ -33,6 +33,13 @@ This README is generated from the headings in [CLAUDE.md](./CLAUDE.md) — do no
   - [cardContainer (the PMD side)](./CLAUDE.md#cardcontainer-the-pmd-side)
   - [simpleCard (the .card file side)](./CLAUDE.md#simplecard-the-card-file-side)
   - [pillCard (the .card file side)](./CLAUDE.md#pillcard-the-card-file-side)
+- [Business objects (Extend model components)](./CLAUDE.md#business-objects-extend-model-components)
+  - [Object-level attributes](./CLAUDE.md#object-level-attributes)
+  - [Field-level attributes (all field types)](./CLAUDE.md#field-level-attributes-all-field-types)
+  - [Field types and their extra attributes](./CLAUDE.md#field-types-and-their-extra-attributes)
+  - [Derived fields](./CLAUDE.md#derived-fields)
+  - [Reserved field names](./CLAUDE.md#reserved-field-names)
+  - [Example](./CLAUDE.md#example)
 - [Workday Script built-in functions](./CLAUDE.md#workday-script-built-in-functions)
   - [IMPORTANT gaps to plan around](./CLAUDE.md#important-gaps-to-plan-around)
   - [bool](./CLAUDE.md#bool)
