@@ -122,6 +122,7 @@ Needs `doNotRemove: false` (default). Define a DELETE outbound endpoint whose UR
 ```json
 { "type": "grid", "id": "expenseGrid", "deleteEndPoint": "deleteExpense", ... }
 ```
+**The per-row POST/PATCH/`deleteEndPoint` pattern breaks when a parent record's multi-instance list must stay in sync.** The page never sees the ids a POST creates, so it can't add them to the parent. In that case, submit the grid as an array to an orchestration (see **Orchestrations → Maintaining relationships**).
 
 ### Grid events
 - `onRowAdd` / `onRowRemove` on the grid; `onChange` on a cell.
