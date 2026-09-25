@@ -524,6 +524,91 @@ Outbound endpoints are REST APIs that add/update/delete data. When the user clic
 - `editButtonBar` — override OK and add more **submit** buttons (e.g. `dropdownEditButton` with an `instanceList`); cannot customize Cancel. Define navigation via AMD flow definitions. Persist a dropdown selection as a flow variable using the dropDown's id.
 - `cancelOverride` (on `presentation`) — override Cancel navigation; supports `parameters`/`parameterBindings`. E.g. `"cancelOverride": { "taskId": "home" }`.
 
+## Orchestrations
+
+An **orchestration** is a server-side flow (`orchestration/<name>.orchestration`) used when a submit needs logic a PMD can't do. The main case: **chaining REST calls where a later call needs an id returned by an earlier one.** PMD outbound endpoints can't read each other's responses, so "create child records, then link them to a parent" must be an orchestration.
+
+Everything below was learned from App Builder–authored orchestrations in a real app (flowVersion `3.1.0`–`3.4.0`). Anything marked **(unverified)** is an inference that hasn't been confirmed on a tenant yet.
+
+### File format
+- The whole file is one typed tree. Every value is wrapped as `{ "_type": <type>, "_value": <value> }`. Examples: `{"_type":"Identifier","_value":"myNode"}`, `{"_type":"Boolean","_value":false}`, and optionals as `{"_type":["Opt","ErrorHandler"],"_value":null}`.
+- Top level: `{ "flowVersion", "_type": "Flow", "_value": { id (32-hex string), name (Identifier), type: ".maya.FlowSync", start, end, nodes, notes, resources, defaultWorkdayCredentialRef, ... } }`.
+- Expressions are `{"_type":["Expr","String"],"_value":{"type":{"_type":"Type","_value":"String"},"source":{"_type":"String","_value":"<expression>"},"isAuto":{"_type":"Boolean","_value":false}}}`. The type can be `String`, `Boolean`, `Number` or `Data`. Json is written as the pair `["Json",{"_type":["Opt","JsonSchemaRef"],"_value":null}]`, and iterators as `["Iterator",[...]]`.
+- **Don't hand-type these files.** They run to thousands of lines. Write a small Node script that **clones real nodes from an existing orchestration in the repo as prototypes** and swaps in names, expressions, templates and paths. That keeps every wrapper exactly as App Builder writes it. Registration isn't needed: dropping the file in `orchestration/` is enough.
+- Notes: `notes._value` is a list of `{"_type":"Note","_value":{"key":{"_type":"String","_value":"description"},"value":{...}}}`. Use one on the flow and on each branch to document intent.
+
+### Calling one from a PMD
+- AMD data provider: `{ "key": "ORCHESTRATION", "value": "<% `https://api.workday.com/orchestrate/v1/apps/{{site.applicationId}}/orchestrations` %>" }`.
+- Outbound endpoint: `{ "name": "...", "baseUrlType": "ORCHESTRATION", "url": "/<orchestrationName>/launch", "authType": "isuAuth", "onSend": "<% ... return request; %>" }`. It's a POST, so only OK / edit-button submits can call it.
+- Build the whole request body in `onSend` from `self.data` (the grid array when `isArrayOutBinding: true`) plus widget values. **Shape the records in the PMD** so the orchestration can pass them straight through.
+- The PMD's **24-second per-endpoint timeout covers the entire orchestration run**, so keep per-row calls modest. Nothing rolls back on failure.
+- Orchestrations can also be *inbound* (e.g. wrapping a SOAP call and returning `data.x.response.asXML().convertToJson()`). The page reads the result by endpoint name, like any other endpoint.
+
+### Start, request parsing, and end
+- `start` is `StartBasic` with `structuredRequest` = `ObjectRequestStructure` (empty `props`). The raw body is `data.start.request`.
+- First node, by convention: a `CreateValues` named `request` that pulls typed fields out of the body:
+  - `data.start.request.asJSON().stringAtJsonPath("$.field")`
+  - `...stringAtJsonPathWithDefault("$.field", "default")`
+  - `...booleanAtJsonPath("$.flag")`
+  - `...numberAtJsonPath("$.n")`
+  - `...arrayAtJsonPath("$.list")` (Json)
+- **There's no object extractor in use**, only arrays. To pass one record through untouched, send it from the PMD as a one-element list and use the bulk API.
+- `end` is `EndSync`. `body` is `null` (no response) or a `DataRefBody` whose source is e.g. `data.someGroup.response`.
+
+### Node types
+| Node | Purpose | Key fields |
+|---|---|---|
+| `CreateValues` | Named typed variables | `values: [Assignment{ param{name,type}, expr }]`. Later assignments may reference earlier ones in the same node (`data.request.x`). |
+| `CreateTextTemplate` | Build a string/JSON body | `message` (TextTemplate, `{{ }}` placeholders), `contentType: "application/json"`. Use it as a body via `data.<name>.message.asJSON()`. |
+| `SendWorkdayApiRequest` | Call a Workday REST/SOAP API | `method` (HttpMethod), `path` (Expr String), `body` (`DataRefBody` → a data source, **or** inline `CreateTextTemplateBody{message, contentType}`), `auth`, timeouts, `retryConfigRef`. The response is at `data.<name>.response`. |
+| `Group` | Named container. Its outputs are visible outside as `data.<groupName>.<value>`. | `nodes` |
+| `ImplicitGroup` | Unnamed body of a loop/branch (`_group_<loop>`, `_group_IF_<branch>`, `_else_<branch>`) | `nodes` |
+| `Loop` | Iterate a Json list | `inputData` iterator, `filter` (opt), `aggregateNode` → `Aggregate{ failOnEmptyStream:false, foldValues:[JsonFoldValue{nameProp, data, condition}] }`, `group` (ImplicitGroup) |
+| `BranchOnConditions` | if/else | `ifBranches: [WhenBranch{ name:"IF", condition, group }]`, `elseBranch` (ImplicitGroup, may be empty), `exceptionIfNoBranchMatched:false`, `enableOutputs:true` |
+| `Log` | Debug log | `message` (Expr String), `condition`. Also usable inside an `errorHandler` (`strategy: "PropagateError"`). |
+
+### Referencing data
+- Same group/scope: `data.<nodeName>.<valueName>` (e.g. `data.assignRates.zeroToSixtyRate`).
+- From outside a `Group`: `data.<groupName>.<valueName>`. The group re-exports the values of its inner nodes and the folds of its inner loops (e.g. `data.createLaborLevels.createdLaborLevelWIDs`).
+- Current loop item: `data.<loopName>.item` (use `.asJSON()` or `.stringAtJsonPath("$.body.id")` on it).
+- A loop's fold result: `data.<loopName>.<foldName>`. It renders as a JSON array when templated, e.g. `{"data": {{data.iterateRows.rowFragments}}}`.
+- Values produced inside a branch: reference the inner node directly (`data.<innerNode>.<value>`) **(unverified)**.
+
+### Expression language
+- Conditional: `if (cond) a else b`, e.g. `(if ((x > 2)) true else false)`. Lazy evaluation of the untaken side is assumed, not confirmed **(unverified)**.
+- Empty-array test: `data.request.list.asJSON().contentLength() > 2`. That's the length of the JSON text, and `[]` is 2 characters.
+- String equality: `.equals("...")`. Number comparison: `==`. `0.0d` is a double literal.
+- Path interpolation: `s"""${"/apps/".append(context.appReferenceId())}${"/v1/myCollection/"}${data.request.wid}"""`.
+- Iterators: `data.request.list.iterator("$[*]")`, `data.x.response.asJSON().iterator("$.data[*]")`.
+- JSON filter: `numberAtJsonPath("$[?(@.bucketID == \"zeroToSixty\")].rate")`.
+- Append to an id array: `existingArray.asJSON().addStringValue("id", newWID)`, which adds `{"id": newWID}`.
+- Other functions seen: `.toString()`, `context.tenant()`, `date.now` / `datetime.now` (in templates), `wrapSoapV11()`, `asXML().convertToJson()`.
+
+### Templates
+- Placeholders are `{{expr}}`. A Json-typed value renders as raw JSON: `{{data.request.list}}` → `[...]`, `{{data.loop.item}}` → `{...}`.
+- Handlebars `{{#if data.request.flag}} ... {{/if}}` works inside a template.
+- **Don't template user-entered free text into a JSON string** (`"notes": "{{...}}"`). Quotes or HTML would break the JSON. Pass user records through as Json values, and only template ids and other safe values.
+- Guard empty folds. When a loop had no items, branch to a literal body (e.g. `"list": []`) rather than templating an empty fold.
+
+### Calling app business-object APIs
+- Path: `/apps/<appReferenceId>/v1/<collectionName>`, with `/<wid>` for one record.
+- Auth: `WorkdayCredentialRef` `_DEFAULT_WORKDAY_CREDENTIAL` with `retryConfigRef` `_DEFAULT_WORKDAY_RETRY_CONFIG`. Declaring an ISU credential under `resources.credentials` is only needed for things like SOAP calls.
+- Header `allowEmptyValue: "true"` is used on BO POSTs.
+- **Single create:** `POST /collection` with the record body. The new id is `response.asJSON().stringAtJsonPath("$.id")`.
+- **Bulk create:** `POST /collection?bulk=true` with `{"data": [ {...}, ... ]}`. Loop `response.asJSON().iterator("$.data[*]")`; each id is at `item.stringAtJsonPath("$.body.id")`. A one-element list gives `$.data[0].body.id`.
+- **Bulk update:** `PATCH /collection?bulk=true` with `{"data": [ {"id": "...", <fields>} ]}`. The same format works for a single row.
+- **Bulk delete:** `DELETE /collection?bulk=true` with `{"data": [ {"id": "..."} ]}`.
+- **GET:** `GET /collection/<wid>` returns the record, with multi-instance fields as `[{id, descriptor}]`.
+
+### Maintaining relationships
+- A `MULTI_INSTANCE` field is **replaced**, never appended, on PATCH. Send the complete list: `{"children": [{"id":"a"},{"id":"b"}]}`.
+- To add one child to a list, GET the parent, use `arrayAtJsonPath("$.children")` + `addStringValue("id", newWID)`, then PATCH.
+- **Unlink before delete.** First PATCH the parent's list to leave out the removed children (or `"child": {"id": ""}` for a single instance), then DELETE them.
+- For **two-way links** (child `SINGLE_INSTANCE` → parent, parent `MULTI_INSTANCE` → children), write both sides on every save:
+  - **Create:** POST the parent → POST the children (bulk) → PATCH the children's back-reference (bulk) → PATCH the parent's list with the new ids.
+  - **Edit grid:** loop the rows (new → POST with the back-reference already set, existing → PATCH), fold every resulting id, PATCH the parent's list to exactly that fold, then bulk-DELETE the rows the PMD reports as removed.
+  - Work out "removed rows" in the PMD `onSend`: the ids loaded in `onLoad` minus the ids still on the grid.
+
 ## cardContainer & Page Configuration Cards
 
 A **Page Configuration Card** is defined in its own **`.card` file** — NOT inline in the PMD. Its `id` **must match the card file name**. In App Builder they live under **Page Configurations > Cards** in the Components panel.

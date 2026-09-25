@@ -4,7 +4,7 @@ My user-level Claude Code instructions, mirrored from `~\.claude\CLAUDE.md`.
 
 This README is generated from the headings in [CLAUDE.md](./CLAUDE.md) — do not edit it by hand; edit the source instructions and the next sync will rewrite it.
 
-**17 topics** · last updated 2026-09-25 14:55
+**18 topics** · last updated 2026-09-25 15:14
 
 ## Contents
 
@@ -34,6 +34,16 @@ This README is generated from the headings in [CLAUDE.md](./CLAUDE.md) — do no
   - [flowVariables — passing values across pages in a flow](./CLAUDE.md#flowvariables--passing-values-across-pages-in-a-flow)
 - [hub widget](./CLAUDE.md#hub-widget)
 - [Submitting data (outbound endpoints)](./CLAUDE.md#submitting-data-outbound-endpoints)
+- [Orchestrations](./CLAUDE.md#orchestrations)
+  - [File format](./CLAUDE.md#file-format)
+  - [Calling one from a PMD](./CLAUDE.md#calling-one-from-a-pmd)
+  - [Start, request parsing, and end](./CLAUDE.md#start-request-parsing-and-end)
+  - [Node types](./CLAUDE.md#node-types)
+  - [Referencing data](./CLAUDE.md#referencing-data)
+  - [Expression language](./CLAUDE.md#expression-language)
+  - [Templates](./CLAUDE.md#templates)
+  - [Calling app business-object APIs](./CLAUDE.md#calling-app-business-object-apis)
+  - [Maintaining relationships](./CLAUDE.md#maintaining-relationships)
 - [cardContainer & Page Configuration Cards](./CLAUDE.md#cardcontainer--page-configuration-cards)
   - [cardContainer (the PMD side)](./CLAUDE.md#cardcontainer-the-pmd-side)
   - [simpleCard (the .card file side)](./CLAUDE.md#simplecard-the-card-file-side)
