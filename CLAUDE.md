@@ -88,6 +88,54 @@ Grid columns are NOT typed widgets placed directly in `columns`. Putting `"type"
 - **`required` goes on the `column`, NOT on the `cellTemplate` widget.** In a grid, mark a column required at the column level: `{ "type": "column", "columnId": "statusColumn", "label": "Status", "required": true, "cellTemplate": { ... } }`. (Outside a grid, `required` sits on the widget itself as usual.)
 - Editable grid: start with `"rows": "<% [] %>"`; users add/remove rows via the +/trash icons. Set `isArrayOutBinding: true` to submit all rows as one outbound array.
 - Read-only display grid: set `readOnly: true` on the grid.
+- Give **every** `cellTemplate` an `id` — `onChange` handlers reference sibling cells in the same row by that id (`otherCell.value = ...`).
+- Default every cell with `??` (`<% row.memo ?? pageVariables.defaultMemo %>`) — new rows start null and PMD scripting errors on null operations.
+
+### Per-row vs array submission
+- **Default (`isArrayOutBinding` false): the grid sends a SEPARATE outbound request PER ROW.** Bindings have no `[]`: `"valueOutBinding": "postExpense.date"`.
+- **`isArrayOutBinding: true`**: all rows go in ONE request; bind with `endpoint.someArray[].field` → body `{ "someArray": [ {...}, {...} ] }`. Use for bulk APIs (e.g. a BO `?bulk=true` PATCH with `data[].id`) or when handing the whole grid to an orchestration.
+- The add/update/delete pattern below relies on **per-row** submission (each row evaluates `exclude` against its own id cell).
+
+### Insert + update in one grid (POST/PATCH switched by `exclude`)
+Adding needs `doNotAdd: false` (default); `showRowMover: true` optionally lets users insert a row below a specific row. Define both endpoints and use `exclude` against the row's id cell so each row hits exactly one:
+```json
+{ "name": "postExpense", "url": "/entries", "baseUrlType": "workday-expenses",
+  "exclude": "<% !empty entryId.value %>" },
+{ "name": "putExpense", "url": "<% '/entries/' + entryId.value %>", "httpMethod": "PUT",
+  "baseUrlType": "workday-expenses", "exclude": "<% empty entryId.value %>" }
+```
+- The **id column**: `cellTemplate.id` must match the id used in `exclude`, value is the row's record id, `valueOutBinding` is `<put/patchEndpoint>.id`, typically `enabled: false` (or a `hidden` tag — see below).
+- **Every other column uses `valuesOut` to bind the same value to BOTH endpoints**; `exclude` decides which fires:
+```json
+"valuesOut": [
+  { "value": "<% self.value %>", "valueOutBinding": "postExpense.date" },
+  { "value": "<% self.value %>", "valueOutBinding": "putExpense.date" }
+]
+```
+
+### Deleting rows (`deleteEndPoint`)
+Needs `doNotRemove: false` (default). Define a DELETE outbound endpoint whose URL uses the row's id cell, then point the grid at it by name — the framework calls it for rows the user removed:
+```json
+{ "name": "deleteExpense", "url": "<% '/entries/' + entryId.value %>", "httpMethod": "DELETE",
+  "baseUrlType": "workday-expenses", "authType": "sso" }
+```
+```json
+{ "type": "grid", "id": "expenseGrid", "deleteEndPoint": "deleteExpense", ... }
+```
+
+### Grid events
+- `onRowAdd` / `onRowRemove` on the grid; `onChange` on a cell.
+- A new row is at the TOP (when `showRowMover` is false): `var newRow = expenseGrid.rows[0]; newRow.childrenMap.dateColumn.value = ...` (`childrenMap` is keyed by **columnId**).
+- `grid.getSubtotal('columnId')` (or `grid:getSubtotal`) sums a numeric column. A widget's own `value` can't call a script function that references that same widget (not constructed yet) — inline the expression instead.
+
+### Hidden values in a column
+Wrap the cell in a `fieldSet` and add a `hidden` tag (any column; order doesn't matter). Useful for record ids / a hidden index when data has no unique id:
+```json
+"cellTemplate": { "type": "fieldSet", "children": [
+  { "type": "readOnlyText", "value": "<% row.company.descriptor %>" },
+  { "type": "hidden", "id": "rowId", "value": "<% row.id %>" } ] }
+```
+Read it via the fieldSet's own childrenMap: `sampleGrid.selectedRows[0].childrenMap.companyColumn.childrenMap.rowId.value`. A `section` wrapper with a `hidden` child also works for carrying ids into `valueOutBinding` (seen in practice).
 
 ```json
 {

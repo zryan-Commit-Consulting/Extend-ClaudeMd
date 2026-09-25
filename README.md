@@ -4,7 +4,7 @@ My user-level Claude Code instructions, mirrored from `~\.claude\CLAUDE.md`.
 
 This README is generated from the headings in [CLAUDE.md](./CLAUDE.md) — do not edit it by hand; edit the source instructions and the next sync will rewrite it.
 
-**17 topics** · last updated 2026-09-24 14:56
+**17 topics** · last updated 2026-09-25 14:55
 
 ## Contents
 
@@ -15,6 +15,11 @@ This README is generated from the headings in [CLAUDE.md](./CLAUDE.md) — do no
 - [date widget](./CLAUDE.md#date-widget)
 - [Widget validation — `onChange` + `setError` / `clearError`](./CLAUDE.md#widget-validation--onchange--seterror--clearerror)
 - [grid widget](./CLAUDE.md#grid-widget)
+  - [Per-row vs array submission](./CLAUDE.md#per-row-vs-array-submission)
+  - [Insert + update in one grid (POST/PATCH switched by `exclude`)](./CLAUDE.md#insert--update-in-one-grid-postpatch-switched-by-exclude)
+  - [Deleting rows (`deleteEndPoint`)](./CLAUDE.md#deleting-rows-deleteendpoint)
+  - [Grid events](./CLAUDE.md#grid-events)
+  - [Hidden values in a column](./CLAUDE.md#hidden-values-in-a-column)
 - [AMD task registration](./CLAUDE.md#amd-task-registration)
 - [instanceList widget](./CLAUDE.md#instancelist-widget)
   - [Populating the list — the three attributes are MUTUALLY EXCLUSIVE](./CLAUDE.md#populating-the-list--the-three-attributes-are-mutually-exclusive)
