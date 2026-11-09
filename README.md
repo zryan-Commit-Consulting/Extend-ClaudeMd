@@ -4,7 +4,7 @@ My user-level Claude Code instructions, mirrored from `~\.claude\CLAUDE.md`.
 
 This README is generated from the headings in [CLAUDE.md](./CLAUDE.md) — do not edit it by hand; edit the source instructions and the next sync will rewrite it.
 
-**18 topics** · last updated 2026-09-25 15:15
+**18 topics** · last updated 2026-11-09 14:25
 
 ## Contents
 
@@ -20,6 +20,7 @@ This README is generated from the headings in [CLAUDE.md](./CLAUDE.md) — do no
   - [Deleting rows (`deleteEndPoint`)](./CLAUDE.md#deleting-rows-deleteendpoint)
   - [Grid events](./CLAUDE.md#grid-events)
   - [Hidden values in a column](./CLAUDE.md#hidden-values-in-a-column)
+  - [Dynamic columns (`dynamicColumns`)](./CLAUDE.md#dynamic-columns-dynamiccolumns)
 - [AMD task registration](./CLAUDE.md#amd-task-registration)
 - [instanceList widget](./CLAUDE.md#instancelist-widget)
   - [Populating the list — the three attributes are MUTUALLY EXCLUSIVE](./CLAUDE.md#populating-the-list--the-three-attributes-are-mutually-exclusive)

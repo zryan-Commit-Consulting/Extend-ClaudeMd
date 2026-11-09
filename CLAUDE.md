@@ -162,6 +162,49 @@ Read it via the fieldSet's own childrenMap: `sampleGrid.selectedRows[0].children
 }
 ```
 
+### Dynamic columns (`dynamicColumns`)
+Generates grid columns at runtime from a list of column definitions, instead of hard-coding `columns`. A child tag of `grid`, valid on **view AND edit** pages. Mobile: Android + iOS.
+
+- Pairs with the grid's **`cellTemplates[]`** (plural). Each entry is `{ "type": "cellTemplate", "templateId": "...", "template": { <widget> } }`. This is distinct from the per-column `cellTemplate` used with static `columns`.
+- **All `dynamicColumns` attributes are required except `id`** (debugging only; must start with a letter, unique per page).
+- Every column definition in `columns` must carry a value that `templateId` resolves to, and each of those values must match the `templateId` of a `cellTemplate` in `cellTemplates[]`.
+- The cell's data comes from `attributeName` (a field path on the row, e.g. `person.email`), so the template widget needs no `value`.
+
+**Attributes:**
+- `columns` (binding-List) — the list of column definitions.
+- `columnVariableName` (string) — alias for the current column definition (e.g. `"aColumn"`), referenced in the other attributes.
+- `columnId` (binding-String) — the generated column's id. Reference a dynamic column by `columnId`, not `id`.
+- `label` (dynamicBinding-String) — the column title.
+- `templateId` (binding-String) — selects which `cellTemplate` renders the column.
+- `attributeName` (binding-String) — the row field holding the cell data.
+
+```json
+{
+  "type": "grid",
+  "id": "workersGrid",
+  "label": "Workers",
+  "rowVariableName": "row",
+  "rows": "<% workersEndpoint.data %>",
+  "dynamicColumns": {
+    "type": "dynamicColumns",
+    "columns": "<% [
+      { 'name': 'Name', 'id': 'descriptor', 'type': 'string', 'dataField': 'descriptor' },
+      { 'name': 'Email', 'id': 'email', 'type': 'string', 'dataField': 'person.email' },
+      { 'name': 'Supervisory Organization', 'id': 'supervisoryOrganization', 'type': 'string',
+        'dataField': 'primaryJob.supervisoryOrganization.descriptor' }
+    ] %>",
+    "columnVariableName": "aColumn",
+    "columnId": "<% aColumn.id %>",
+    "label": "<% aColumn.name %>",
+    "templateId": "<% aColumn.type %>",
+    "attributeName": "<% aColumn.dataField %>"
+  },
+  "cellTemplates": [
+    { "type": "cellTemplate", "templateId": "string", "template": { "type": "text" } }
+  ]
+}
+```
+
 ## AMD task registration
 Pages are registered in a `tasks` array in the **AMD**. Each entry: `{ "id": "<TaskId>", "routingPattern": "/...", "page": { "id": "<PageId>" } }`. The task `id` is what `taskId` references (hub `initialTask`/`navigationTasks`, flow `flowSteps`, button `taskReference`). The Home/landing task typically uses `"routingPattern": "/"`.
 
