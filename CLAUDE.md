@@ -643,6 +643,7 @@ Everything below was learned from App Builder–authored orchestrations in a rea
 - **Bulk update:** `PATCH /collection?bulk=true` with `{"data": [ {"id": "...", <fields>} ]}`. The same format works for a single row.
 - **Bulk delete:** `DELETE /collection?bulk=true` with `{"data": [ {"id": "..."} ]}`.
 - **GET:** `GET /collection/<wid>` returns the record, with multi-instance fields as `[{id, descriptor}]`.
+- **List GETs cap `limit` at 100.** `limit` must be 1–100; more returns 400 `S25 "limit parameter invalid: must be between 1 and 100"` (observed 2026-11-11, Baird). To COUNT records, filter on indexed fields with `limit=1` and read the response's `total` (e.g. `<% myEndpoint.total ?? 0 %>`), instead of fetching rows and calling `.size()`.
 
 ### Maintaining relationships
 - A `MULTI_INSTANCE` field is **replaced**, never appended, on PATCH. Send the complete list: `{"children": [{"id":"a"},{"id":"b"}]}`.
