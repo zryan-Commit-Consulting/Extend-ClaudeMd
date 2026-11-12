@@ -644,8 +644,8 @@ JoinLoop { name, isDisabled, errorHandler,
   - Primary key: `data.CompareDataSources.reportRow.stringAtJsonPathWithDefault("$.x", emptyString())`.
   - Joining key: `data.CompareDataSources.openAnomaly.stringAtJsonPathWithDefault("$.x", emptyString())`.
   - The primary key can also use other upstream steps (e.g. `data.getCustomReportValue.auditTypeWID.append("-")...`).
-- In the body: `data.<JoinLoop>.<primaryOutputName>`, `data.<JoinLoop>.<joiningOutputName>`, `data.<JoinLoop>.<returnValueName>`, and `data.<JoinLoop>.itemNumber`. There is **no `.item`**, unlike `Loop`.
-- `isDataDefined` works on a joining output name (`"openAnomaly"`) or a return value name (`"modeID"`). Both are seen in real apps.
+- In the body (3.7.0): the JoinLoop outputs are only the primary record `data.<JoinLoop>.<primaryOutputName>`, each **return value** `data.<JoinLoop>.<returnValueName>`, and `data.<JoinLoop>.itemNumber`. There is **no `.item`**, unlike `Loop`.
+- **The joining dataset's output name is NOT an output of the step.** It can only be used inside the Join Loop's own joining-key and return-value expressions. Referencing it from the body fails validation: "Upstream <JoinLoop> does not produce an output named <joiningOutputName>" (observed 2026-11-12, Baird). To use joined data in the body, or to detect a match, add a **Return Value** and test it: `isDataDefined("CompareDataSources", "matchedAnomalyKey")`. Some 3.0.0 files (CalendarData) test the joining output name instead. That form fails in 3.7.
 - **The keys must compare equal as strings.** When the primary key is computed (concatenated, date-trimmed), keep the same formula in any body value that rebuilds it, or the two will drift.
 - The 3.7.0 shape above (especially `multipleMatches`) was confirmed from a JoinLoop added in App Builder. Older (3.0/3.1/3.4) JoinLoops are in Time Off Bidding (`CalendarData`, `UpdateEmployeeSeniority`, `UpdateVacationGroups`). **Don't clone those into a 3.7 file**: add the step in App Builder and fill it in.
 
