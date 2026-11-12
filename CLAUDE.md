@@ -610,6 +610,44 @@ Everything below was learned from App Builder–authored orchestrations in a rea
 | `Loop` | Iterate a Json list | `inputData` iterator, `filter` (opt), `aggregateNode` → `Aggregate{ failOnEmptyStream:false, foldValues:[JsonFoldValue{nameProp, data, condition}] }`, `group` (ImplicitGroup) |
 | `BranchOnConditions` | if/else | `ifBranches: [WhenBranch{ name:"IF", condition, group }]`, `elseBranch` (ImplicitGroup, may be empty), `exceptionIfNoBranchMatched:false`, `enableOutputs:true` |
 | `Log` | Debug log | `message` (Expr String), `condition`. Also usable inside an `errorHandler` (`strategy: "PropagateError"`). |
+| `JoinLoop` | Loop over a primary dataset, matching each record to 1+ joining datasets by key | See **Join Loop** below. |
+
+### Join Loop
+Matches each record of a **primary dataset** with records from one or more **joining datasets** on a common key. The matched records, or chosen values from them, are available in the loop body. Available in the Synchronous, Asynchronous, Business Process, Home Card, Integration System and Custom Agent Action templates. Supports aggregations (folds), like `Loop`.
+
+- **Primary dataset:** the one that's **iterated**, which drives the loop. Configure an Output Name (the current record), an Iterator (expression) and a Data Iterator Type (`AutoType` lets Orchestrate infer it).
+- **Joining dataset:** queried for matches for each primary record. Configure a Primary Dataset Key (expression on the primary record), an Iterator, a Data Iterator Type, a Joining Dataset Key (expression on the joining record) and optional **Return Values** (specific values exposed to the body). You can add several joins, each with its own keys and dataset.
+- **Joining datasets max 500 MB.** If one dataset has unusually large records, make it the **primary**.
+- **Multiple Match Strategy** (a primary record matches more than one joining record): Complete with Error · Skip Record · Use First · Use Last · Use All.
+- **Missing Match Strategy** (a primary record has no match in 1+ joining datasets): Complete with Error · Skip Record · **Alternate Processing**. Alternate Processing still passes the record into the body; test `isDataDefined("<JoinLoopName>", "<joiningOutputName>")` to tell matched records from unmatched ones and branch or fold on it.
+- Both strategies can carry a custom log message, built with Expression Builder.
+- Related member functions: JoinResiduals, MatchedWith (see Workday docs).
+
+**Choosing primary vs joining:** the primary must be the dataset whose records you act on, because only primary records drive the body.
+- **Dedupe** (create only what isn't already there): primary = the new candidates, joining = the existing records, Missing Match = **Alternate Processing**. Unmatched (`!isDataDefined`) means new; matched means duplicate.
+- **Skip Record** on Missing Match keeps only matched records (an inner join). Alternate Processing is a left join.
+
+**File shape** (App Builder-authored, flowVersion 3.7.0):
+```
+JoinLoop { name, isDisabled, errorHandler,
+  outputName,                                   // primary record name
+  iterator: Expr<Iterator<Opt Any>> { type: ["Iterator",["Json",…]], source, isAuto: true when AutoType },
+  joins: [ Join { key: Expr String,             // PRIMARY key
+                  from: [ JoinWith { outputName, iterator, key: Expr String,   // JOINING key
+                                     values: [ JoinedValue { outputName, value: Expr } ] } ],
+                  nameProp: Opt Identifier = null } ],
+  missingMatch: MissingMatchRule { matchType: MissingMatchType "ALTERNATE_PROCESSING" | "SKIP_RECORD" | …, log: Opt MatchErrorLog },
+  multipleMatches: SkipRecord { log } ,         // 3.7: the strategy IS the _type. 3.0–3.4: MultipleMatchesRule "USE_FIRST"|"USE_LAST"|"USE_ALL"
+  aggregateNode: Opt Aggregate, group: ImplicitGroup "_group_<name>", notes }
+```
+- **Key and value expressions reference the current records as `data.<JoinLoopName>.<outputName>`**:
+  - Primary key: `data.CompareDataSources.reportRow.stringAtJsonPathWithDefault("$.x", emptyString())`.
+  - Joining key: `data.CompareDataSources.openAnomaly.stringAtJsonPathWithDefault("$.x", emptyString())`.
+  - The primary key can also use other upstream steps (e.g. `data.getCustomReportValue.auditTypeWID.append("-")...`).
+- In the body: `data.<JoinLoop>.<primaryOutputName>`, `data.<JoinLoop>.<joiningOutputName>`, `data.<JoinLoop>.<returnValueName>`, and `data.<JoinLoop>.itemNumber`. There is **no `.item`**, unlike `Loop`.
+- `isDataDefined` works on a joining output name (`"openAnomaly"`) or a return value name (`"modeID"`). Both are seen in real apps.
+- **The keys must compare equal as strings.** When the primary key is computed (concatenated, date-trimmed), keep the same formula in any body value that rebuilds it, or the two will drift.
+- The 3.7.0 shape above (especially `multipleMatches`) was confirmed from a JoinLoop added in App Builder. Older (3.0/3.1/3.4) JoinLoops are in Time Off Bidding (`CalendarData`, `UpdateEmployeeSeniority`, `UpdateVacationGroups`). **Don't clone those into a 3.7 file**: add the step in App Builder and fill it in.
 
 ### Referencing data
 - Same group/scope: `data.<nodeName>.<valueName>` (e.g. `data.assignRates.zeroToSixtyRate`).

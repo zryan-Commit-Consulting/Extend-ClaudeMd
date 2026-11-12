@@ -4,7 +4,7 @@ My user-level Claude Code instructions, mirrored from `~\.claude\CLAUDE.md`.
 
 This README is generated from the headings in [CLAUDE.md](./CLAUDE.md) — do not edit it by hand; edit the source instructions and the next sync will rewrite it.
 
-**18 topics** · last updated 2026-11-11 13:35
+**18 topics** · last updated 2026-11-12 11:33
 
 ## Contents
 
@@ -40,6 +40,7 @@ This README is generated from the headings in [CLAUDE.md](./CLAUDE.md) — do no
   - [Calling one from a PMD](./CLAUDE.md#calling-one-from-a-pmd)
   - [Start, request parsing, and end](./CLAUDE.md#start-request-parsing-and-end)
   - [Node types](./CLAUDE.md#node-types)
+  - [Join Loop](./CLAUDE.md#join-loop)
   - [Referencing data](./CLAUDE.md#referencing-data)
   - [Expression language](./CLAUDE.md#expression-language)
   - [Templates](./CLAUDE.md#templates)
