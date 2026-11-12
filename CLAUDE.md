@@ -683,6 +683,17 @@ JoinLoop { name, isDisabled, errorHandler,
 - **GET:** `GET /collection/<wid>` returns the record, with multi-instance fields as `[{id, descriptor}]`.
 - **List GETs cap `limit` at 100.** `limit` must be 1–100; more returns 400 `S25 "limit parameter invalid: must be between 1 and 100"` (observed 2026-11-11, Baird). To COUNT records, filter on indexed fields with `limit=1` and read the response's `total` (e.g. `<% myEndpoint.total ?? 0 %>`), instead of fetching rows and calling `.size()`.
 
+### Calling a custom report (RaaS)
+- **Verified path (2026-11-12, Baird):** `SendWorkdayApiRequest` `GET "/raas/<reportOwnerUserName>/<WebServiceAlias>"` with QueryParam `format` = `"json"`. Rows come back at `response.asJSON().iterator("$.Report_Entry[*]")`.
+  - This is the REST gateway form of the classic `https://<host>/ccx/service/customreport2/<tenant>/<owner>/<alias>?format=json` URL. The tenant is NOT part of the gateway path: `/raas/<tenant>/<owner>/<alias>` returns 404.
+  - Prompts are extra query params (e.g. `Worker!WID`, `Start_Date`).
+- **The owner segment is required.** `/raas/<alias>` alone returns 404.
+- **Don't take the owner from `webServiceNamespace`.** `customReportsICanRun.webServiceNamespace` is `urn:com.workday.report/<alias>` for many reports, with no owner. For copied reports it can even name a different person than the actual owner.
+  - Build the path as `reportOwner.descriptor.substringBefore(' / ') + '/' + webServiceNamespace.substringAfterLast('/')`.
+  - `reportOwner.descriptor` looks like `"lmcneil / Logan McNeil"`. An ISU owner may have no " / ", and then `substringBefore` returns the whole string.
+- The `SendWorkdayRaasRequest` step's `path` format is **unverified**: no working example exists, and the template leaves it empty. Prefer the `SendWorkdayApiRequest` form above.
+- The PMD equivalent is a `workday-raas` data provider `https://api.workday.com/raas/` with the same `<owner>/<alias>` URL.
+
 ### Maintaining relationships
 - A `MULTI_INSTANCE` field is **replaced**, never appended, on PATCH. Send the complete list: `{"children": [{"id":"a"},{"id":"b"}]}`.
 - To add one child to a list, GET the parent, use `arrayAtJsonPath("$.children")` + `addStringValue("id", newWID)`, then PATCH.

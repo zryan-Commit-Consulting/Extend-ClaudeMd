@@ -4,7 +4,7 @@ My user-level Claude Code instructions, mirrored from `~\.claude\CLAUDE.md`.
 
 This README is generated from the headings in [CLAUDE.md](./CLAUDE.md) — do not edit it by hand; edit the source instructions and the next sync will rewrite it.
 
-**18 topics** · last updated 2026-11-12 12:06
+**18 topics** · last updated 2026-11-12 12:51
 
 ## Contents
 
@@ -45,6 +45,7 @@ This README is generated from the headings in [CLAUDE.md](./CLAUDE.md) — do no
   - [Expression language](./CLAUDE.md#expression-language)
   - [Templates](./CLAUDE.md#templates)
   - [Calling app business-object APIs](./CLAUDE.md#calling-app-business-object-apis)
+  - [Calling a custom report (RaaS)](./CLAUDE.md#calling-a-custom-report-raas)
   - [Maintaining relationships](./CLAUDE.md#maintaining-relationships)
 - [cardContainer & Page Configuration Cards](./CLAUDE.md#cardcontainer--page-configuration-cards)
   - [cardContainer (the PMD side)](./CLAUDE.md#cardcontainer-the-pmd-side)
