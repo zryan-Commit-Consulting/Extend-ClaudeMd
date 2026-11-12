@@ -691,6 +691,16 @@ JoinLoop { name, isDisabled, errorHandler,
 - **Don't take the owner from `webServiceNamespace`.** `customReportsICanRun.webServiceNamespace` is `urn:com.workday.report/<alias>` for many reports, with no owner. For copied reports it can even name a different person than the actual owner.
   - Build the path as `reportOwner.descriptor.substringBefore(' / ') + '/' + webServiceNamespace.substringAfterLast('/')`.
   - `reportOwner.descriptor` looks like `"lmcneil / Logan McNeil"`. An ISU owner may have no " / ", and then `substringBefore` returns the whole string.
+- **Looking up the owner when only the report name is saved** (WQL, verified 2026-11-12):
+  ```
+  SELECT reportName, webServiceNamespace, reportOwner FROM customReportsICanRun
+  WHERE enableAsWebService = true AND webServiceNamespace contains "/<WebServiceAlias>" AND reportName = "<display name>"
+  ```
+  - Exact `webServiceNamespace = "urn:com.workday.report/<alias>"` only matches namespaces with no owner segment.
+  - Copied reports can share one namespace (`tserrano/Account_Balance_Data`) under different owners. Matching `reportName` as well makes the result unique, so save the display name alongside the alias.
+  - `customReportsICanRun` only lists reports the calling user can run. Require exactly 1 row before building the path.
+  - In an orchestration, `stringAtJsonPathWithDefault("$.data[1].reportName", emptyString())` being non-empty means the match was ambiguous.
+  - This source has no plain owner user-name field and no alias field. Its fields include `reportOwner` (Workday Account), `webServiceNamespace`, `reportName`, `customReport`, `prompts`, `enableAsWebService` and `lastRunDate`.
 - The `SendWorkdayRaasRequest` step's `path` format is **unverified**: no working example exists, and the template leaves it empty. Prefer the `SendWorkdayApiRequest` form above.
 - The PMD equivalent is a `workday-raas` data provider `https://api.workday.com/raas/` with the same `<owner>/<alias>` URL.
 
