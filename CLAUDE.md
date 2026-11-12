@@ -624,7 +624,7 @@ Matches each record of a **primary dataset** with records from one or more **joi
 - Related member functions: JoinResiduals, MatchedWith (see Workday docs).
 
 **Choosing primary vs joining:** the primary must be the dataset whose records you act on, because only primary records drive the body.
-- **Dedupe** (create only what isn't already there): primary = the new candidates, joining = the existing records, Missing Match = **Alternate Processing**. Unmatched (`!isDataDefined`) means new; matched means duplicate.
+- **Dedupe** (create only what isn't already there): primary = the new candidates, joining = the existing records, Missing Match = **Alternate Processing**. Add a return value from the joining record, then test `isDataDefined` on it: not defined means new, defined means duplicate.
 - **Skip Record** on Missing Match keeps only matched records (an inner join). Alternate Processing is a left join.
 
 **File shape** (App Builder-authored, flowVersion 3.7.0):
