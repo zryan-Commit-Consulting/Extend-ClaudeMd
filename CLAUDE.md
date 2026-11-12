@@ -681,6 +681,7 @@ JoinLoop { name, isDisabled, errorHandler,
 - **Bulk update:** `PATCH /collection?bulk=true` with `{"data": [ {"id": "...", <fields>} ]}`. The same format works for a single row.
 - **Bulk delete:** `DELETE /collection?bulk=true` with `{"data": [ {"id": "..."} ]}`.
 - **GET:** `GET /collection/<wid>` returns the record, with multi-instance fields as `[{id, descriptor}]`.
+- **Write `DATE` fields as a full timestamp `yyyy-MM-dd'T'HH:mm:ss.SSS'Z'`.** An orchestration bulk POST that sent `"dateFound": "2026-11-12"` (date-only) created the records with everything except `dateFound`, which was left empty with no error (observed 2026-11-11/12, Baird). Full timestamps, from PMD `date:now().format('yyyy-MM-dd\\'T\\'HH:mm:ss.SSS\\'Z\\'')` and orchestration `datetime.now().format("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")`, are saved. For a date-only source value use `value.substring(0, 10).append("T00:00:00.000Z")`.
 - **List GETs cap `limit` at 100.** `limit` must be 1–100; more returns 400 `S25 "limit parameter invalid: must be between 1 and 100"` (observed 2026-11-11, Baird). To COUNT records, filter on indexed fields with `limit=1` and read the response's `total` (e.g. `<% myEndpoint.total ?? 0 %>`), instead of fetching rows and calling `.size()`.
 
 ### Calling a custom report (RaaS)
